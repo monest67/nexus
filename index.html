@@ -1,0 +1,1836 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEXUS // BLACK PROTOCOL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #050709;
+            --bg-secondary: #090F12;
+            --color-acid: #B6FF00;
+            --color-neon: #00E5FF;
+            --color-red: #FF304F;
+            --color-text-sec: #66838A;
+            --color-text-main: #D7F5F0;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-display: 'Orbitron', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            * { cursor: auto; }
+            #custom-cursor { display: none !important; }
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--color-text-main);
+            font-family: var(--font-mono);
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .crt-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        .noise-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 9997;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: rgba(0, 229, 255, 0.1);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+            animation: scanline 6s linear infinite;
+            pointer-events: none;
+            z-index: 9996;
+        }
+
+        @keyframes scanline {
+            0% { top: -5%; }
+            100% { top: 105%; }
+        }
+
+        #custom-cursor {
+            position: fixed;
+            top: 0; left: 0;
+            pointer-events: none;
+            z-index: 10000;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-dot {
+            width: 6px; height: 6px;
+            background: var(--color-acid);
+            border-radius: 50%;
+            position: absolute;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s, background 0.2s;
+        }
+
+        .cursor-ring {
+            width: 32px; height: 32px;
+            border: 1px solid var(--color-neon);
+            border-radius: 50%;
+            position: absolute;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, border-color 0.3s;
+        }
+
+        .cursor-hover .cursor-dot { width: 12px; height: 12px; background: var(--color-neon); }
+        .cursor-hover .cursor-ring { width: 48px; height: 48px; border-color: var(--color-acid); }
+
+        #boot-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9000;
+            padding: 2rem;
+        }
+
+        .boot-title {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            color: var(--color-neon);
+            margin-bottom: 2rem;
+            letter-spacing: 4px;
+        }
+
+        .boot-log {
+            width: 100%;
+            max-width: 600px;
+            font-size: 0.9rem;
+            color: var(--color-text-sec);
+            margin-bottom: 2rem;
+            min-height: 150px;
+        }
+
+        .boot-log-line {
+            margin-bottom: 0.5rem;
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        .boot-log-line.success { color: var(--color-acid); }
+        .boot-log-line.error { color: var(--color-red); }
+
+        .progress-container {
+            width: 100%;
+            max-width: 600px;
+            height: 2px;
+            background: var(--bg-secondary);
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--color-neon);
+            width: 0%;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px var(--color-neon);
+        }
+
+        .progress-text {
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            color: var(--color-neon);
+            text-align: right;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .skip-btn {
+            margin-top: 2rem;
+            background: transparent;
+            border: 1px solid var(--color-text-sec);
+            color: var(--color-text-sec);
+            padding: 0.5rem 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+
+        .skip-btn:hover {
+            border-color: var(--color-acid);
+            color: var(--color-acid);
+            box-shadow: 0 0 15px rgba(182, 255, 0, 0.3);
+        }
+
+        #main-interface {
+            display: none;
+            opacity: 0;
+            transition: opacity 1s ease;
+            padding: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: var(--color-text-main);
+            letter-spacing: 2px;
+        }
+
+        .logo span { color: var(--color-neon); }
+
+        .status-bar {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--color-text-sec);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--color-acid);
+            box-shadow: 0 0 8px var(--color-acid);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .lang-switcher {
+            background: transparent;
+            border: 1px solid var(--color-neon);
+            color: var(--color-neon);
+            padding: 0.3rem 0.8rem;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 1rem;
+        }
+
+        .lang-switcher:hover {
+            background: rgba(0, 229, 255, 0.1);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+        }
+
+        .panels-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .panels-grid { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: rgba(9, 15, 18, 0.8);
+            border: 1px solid rgba(0, 229, 255, 0.15);
+            padding: 1.5rem;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px;
+            width: 10px; height: 10px;
+            border-top: 2px solid var(--color-neon);
+            border-left: 2px solid var(--color-neon);
+        }
+
+        .panel::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; right: -1px;
+            width: 10px; height: 10px;
+            border-bottom: 2px solid var(--color-neon);
+            border-right: 2px solid var(--color-neon);
+        }
+
+        .panel:hover {
+            border-color: rgba(0, 229, 255, 0.4);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.05);
+        }
+
+        .panel-title {
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            color: var(--color-neon);
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .panel-content {
+            font-size: 0.85rem;
+            color: var(--color-text-sec);
+            line-height: 1.6;
+        }
+
+        .panel-content .value {
+            color: var(--color-text-main);
+            font-weight: 700;
+        }
+
+        .panel-content .value.acid { color: var(--color-acid); }
+        .panel-content .value.red { color: var(--color-red); }
+
+        #neural-core-canvas {
+            width: 100%;
+            height: 150px;
+            margin-top: 1rem;
+        }
+
+        .glitch {
+            position: relative;
+            color: var(--color-text-main);
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            text-align: center;
+            margin: 2rem 0 1rem;
+            background: var(--bg-primary);
+            padding: 0.5rem 0;
+        }
+
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-primary);
+        }
+
+        .glitch::before {
+            left: 2px;
+            text-shadow: -1px 0 var(--color-red);
+            clip-path: inset(0 0 0 0);
+            animation: glitch-anim-1 2s infinite linear alternate-reverse;
+        }
+
+        .glitch::after {
+            left: -2px;
+            text-shadow: -1px 0 var(--color-neon);
+            clip-path: inset(0 0 0 0);
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim-1 {
+            0% { clip-path: inset(20% 0 80% 0); }
+            20% { clip-path: inset(60% 0 10% 0); }
+            40% { clip-path: inset(40% 0 50% 0); }
+            60% { clip-path: inset(80% 0 5% 0); }
+            80% { clip-path: inset(10% 0 70% 0); }
+            100% { clip-path: inset(30% 0 20% 0); }
+        }
+
+        @keyframes glitch-anim-2 {
+            0% { clip-path: inset(10% 0 60% 0); }
+            20% { clip-path: inset(30% 0 20% 0); }
+            40% { clip-path: inset(70% 0 10% 0); }
+            60% { clip-path: inset(20% 0 50% 0); }
+            80% { clip-path: inset(50% 0 30% 0); }
+            100% { clip-path: inset(0% 0 80% 0); }
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--color-text-sec);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            letter-spacing: 1px;
+        }
+
+        .investigate-btn {
+            display: block;
+            margin: 1rem auto 0;
+            background: transparent;
+            border: 1px solid var(--color-red);
+            color: var(--color-red);
+            padding: 0.75rem 2rem;
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .investigate-btn:hover {
+            background: rgba(255, 48, 79, 0.1);
+            box-shadow: 0 0 20px rgba(255, 48, 79, 0.3);
+            text-shadow: 0 0 8px var(--color-red);
+        }
+
+        .terminal-container {
+            background: rgba(5, 7, 9, 0.95);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            padding: 1.5rem;
+            margin-top: 2rem;
+            position: relative;
+        }
+
+        .terminal-header {
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            color: var(--color-text-sec);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .terminal-output {
+            height: 300px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--color-neon) var(--bg-secondary);
+        }
+
+        .terminal-output::-webkit-scrollbar { width: 6px; }
+        .terminal-output::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        .terminal-output::-webkit-scrollbar-thumb { background: var(--color-neon); }
+
+        .terminal-line { margin-bottom: 0.5rem; }
+        .terminal-line.prompt { color: var(--color-acid); }
+        .terminal-line.error { color: var(--color-red); }
+        .terminal-line.success { color: var(--color-acid); }
+        .terminal-line.info { color: var(--color-neon); }
+
+        .terminal-input-line {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .terminal-prompt {
+            color: var(--color-acid);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        #terminal-input {
+            background: transparent;
+            border: none;
+            color: var(--color-text-main);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            flex: 1;
+            outline: none;
+            caret-color: var(--color-acid);
+        }
+
+        #quest-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 7, 9, 0.98);
+            z-index: 8000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        #quest-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .quest-title {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            color: var(--color-red);
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 4px;
+        }
+
+        .quest-content {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .quest-message {
+            font-size: 1rem;
+            color: var(--color-text-main);
+            margin-bottom: 2rem;
+            line-height: 1.8;
+            min-height: 100px;
+        }
+
+        .quest-input {
+            background: rgba(9, 15, 18, 0.8);
+            border: 1px solid var(--color-neon);
+            color: var(--color-text-main);
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .quest-input:focus {
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+
+        .quest-btn {
+            background: transparent;
+            border: 1px solid var(--color-acid);
+            color: var(--color-acid);
+            padding: 0.75rem 2rem;
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            margin-top: 1rem;
+            transition: all 0.3s;
+        }
+
+        .quest-btn:hover {
+            background: rgba(182, 255, 0, 0.1);
+            box-shadow: 0 0 15px rgba(182, 255, 0, 0.3);
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 8500;
+            background: transparent;
+            border: 1px solid var(--color-neon);
+            color: var(--color-neon);
+            padding: 0.5rem 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: none;
+        }
+
+        .back-btn:hover {
+            background: rgba(0, 229, 255, 0.1);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+        }
+
+        .back-btn.visible {
+            display: block;
+        }
+
+        .frequency-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .freq-btn {
+            background: transparent;
+            border: 1px solid var(--color-text-sec);
+            color: var(--color-text-sec);
+            padding: 1rem 2rem;
+            font-family: var(--font-display);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .freq-btn:hover {
+            border-color: var(--color-neon);
+            color: var(--color-neon);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+
+        .freq-btn.selected {
+            border-color: var(--color-acid);
+            color: var(--color-acid);
+            box-shadow: 0 0 20px rgba(182, 255, 0, 0.4);
+        }
+
+        .freq-btn.error {
+            border-color: var(--color-red);
+            color: var(--color-red);
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 0.5rem;
+            margin: 2rem 0;
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            color: var(--color-text-sec);
+            user-select: all;
+        }
+
+        .matrix-grid span {
+            padding: 0.5rem;
+            border: 1px solid rgba(102, 131, 138, 0.2);
+            transition: all 0.3s;
+        }
+
+        .matrix-grid span:hover {
+            color: var(--color-neon);
+            border-color: var(--color-neon);
+        }
+
+        #secret-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-primary);
+            z-index: 8500;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        #secret-screen.active {
+            display: flex;
+            animation: fadeIn 1s forwards;
+        }
+
+        .secret-title {
+            font-family: var(--font-display);
+            font-size: 3rem;
+            color: var(--color-acid);
+            margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(182, 255, 0, 0.5);
+            animation: glitch-anim-1 3s infinite;
+            background: var(--bg-primary);
+            padding: 0.5rem 1rem;
+        }
+
+        .secret-text {
+            font-size: 1.2rem;
+            color: var(--color-text-main);
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .secret-stats {
+            margin: 3rem 0;
+            padding: 2rem;
+            border: 1px solid rgba(182, 255, 0, 0.3);
+            background: rgba(182, 255, 0, 0.05);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .stat-label { color: var(--color-text-sec); }
+        .stat-value { color: var(--color-acid); font-weight: 700; }
+
+        .restart-btn {
+            background: transparent;
+            border: 1px solid var(--color-neon);
+            color: var(--color-neon);
+            padding: 1rem 3rem;
+            font-family: var(--font-display);
+            font-size: 1rem;
+            letter-spacing: 3px;
+            margin-top: 2rem;
+            transition: all 0.3s;
+        }
+
+        .restart-btn:hover {
+            background: rgba(0, 229, 255, 0.1);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+        }
+
+        #matrix-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 7000;
+            display: none;
+            pointer-events: none;
+        }
+
+        #matrix-canvas.active { display: block; }
+
+        #notifications {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9500;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .notification {
+            background: rgba(9, 15, 18, 0.95);
+            border-left: 3px solid var(--color-neon);
+            padding: 1rem 1.5rem;
+            font-size: 0.8rem;
+            color: var(--color-text-main);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s forwards;
+            max-width: 300px;
+        }
+
+        .notification.success { border-left-color: var(--color-acid); }
+        .notification.error { border-left-color: var(--color-red); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        #audio-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            background: transparent;
+            border: 1px solid var(--color-text-sec);
+            color: var(--color-text-sec);
+            padding: 0.5rem;
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            transition: all 0.3s;
+        }
+
+        #audio-toggle:hover {
+            border-color: var(--color-neon);
+            color: var(--color-neon);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            .scanline, .crt-overlay, .noise-overlay { display: none; }
+        }
+
+        @media (max-width: 600px) {
+            .glitch { font-size: 1.5rem; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .status-bar { gap: 0.75rem; font-size: 0.65rem; }
+            .terminal-output { height: 200px; }
+            .secret-title { font-size: 1.8rem; }
+            #notifications { bottom: 1rem; right: 1rem; left: 1rem; }
+            .notification { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="crt-overlay"></div>
+    <div class="noise-overlay"></div>
+    <div class="scanline"></div>
+
+    <div id="custom-cursor">
+        <div class="cursor-dot"></div>
+        <div class="cursor-ring"></div>
+    </div>
+
+    <button id="audio-toggle">AUDIO: OFF</button>
+
+    <div id="boot-screen">
+        <div class="boot-title" data-i18n="bootTitle">NEXUS OS // INITIALIZING...</div>
+        <div class="boot-log" id="boot-log"></div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="progress-text" id="progress-text">0%</div>
+        <button class="skip-btn" id="skip-boot" data-i18n="skipBoot">SKIP INITIALIZATION</button>
+    </div>
+
+    <div id="main-interface">
+        <header class="header">
+            <div class="logo">NEXUS <span>//</span> BLACK PROTOCOL</div>
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-indicator"></div>
+                    <span data-i18n="systemOnline">SYSTEM: ONLINE</span>
+                </div>
+                <div class="status-item">
+                    <span data-i18n="securityLevel">SECURITY: LEVEL 04</span>
+                </div>
+                <div class="status-item">
+                    <span data-i18n="encryptionActive">ENCRYPTION: ACTIVE</span>
+                </div>
+                <div class="status-item">
+                    <span id="clock">00:00:00</span>
+                </div>
+                <div class="status-item">
+                    <span style="color: var(--color-acid)"><span data-i18n="score">SCORE</span>: <span id="score-display">0</span></span>
+                </div>
+                <button class="lang-switcher" id="lang-switcher">RU</button>
+            </div>
+        </header>
+
+        <h1 class="glitch" data-text="WELCOME TO THE UNKNOWN" data-i18n="welcomeTitle">WELCOME TO THE UNKNOWN</h1>
+        <p class="subtitle" data-i18n="subtitle1">YOU HAVE ENTERED A RESTRICTED DIGITAL ENVIRONMENT.</p>
+        <p class="subtitle" style="margin-top: -1rem; font-size: 0.8rem;" data-i18n="subtitle2">Your reality is only a layer of the system.</p>
+
+        <div class="panels-grid">
+            <div class="panel">
+                <div class="panel-title">
+                    <span data-i18n="networkStatus">NETWORK STATUS</span>
+                    <span>[A]</span>
+                </div>
+                <div class="panel-content">
+                    <div><span data-i18n="connection">Connection</span>: <span class="value acid" data-i18n="secure">SECURE</span></div>
+                    <div><span data-i18n="nodesDetected">Nodes detected</span>: <span class="value" id="nodes-count">1,284</span></div>
+                    <div><span data-i18n="activeChannels">Active channels</span>: <span class="value" id="channels-count">37</span></div>
+                    <div><span data-i18n="threatLevel">Threat level</span>: <span class="value" data-i18n="low">LOW</span></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">
+                    <span data-i18n="neuralCore">NEURAL CORE</span>
+                    <span>[B]</span>
+                </div>
+                <div class="panel-content">
+                    <canvas id="neural-core-canvas"></canvas>
+                    <div style="text-align: center; margin-top: 0.5rem;">
+                        <div style="color: var(--color-neon); font-weight: 700;">NEXUS AI</div>
+                        <div style="font-size: 0.75rem; margin-top: 0.25rem;"><span data-i18n="coreStability">CORE STABILITY</span>: <span class="value acid" id="core-stability">98.7%</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">
+                    <span data-i18n="systemAlert">SYSTEM ALERT</span>
+                    <span>[C]</span>
+                </div>
+                <div class="panel-content">
+                    <div style="color: var(--color-red); font-weight: 700; margin-bottom: 0.5rem;" data-i18n="unknownSignal">UNKNOWN SIGNAL DETECTED</div>
+                    <div style="margin-bottom: 1rem;" data-i18n="signalIntercepted">An unidentified transmission has been intercepted.</div>
+                    <button class="investigate-btn" id="investigate-btn" data-i18n="investigateSignal">INVESTIGATE SIGNAL</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="terminal-container">
+            <div class="terminal-header">
+                <span data-i18n="terminalHeader">ROOT ACCESS TERMINAL</span>
+                <span>v2.4.1</span>
+            </div>
+            <div class="terminal-output" id="terminal-output"></div>
+            <div class="terminal-input-line">
+                <span class="terminal-prompt">root@nexus:~$</span>
+                <input type="text" id="terminal-input" autocomplete="off" spellcheck="false" autofocus>
+            </div>
+        </div>
+    </div>
+
+    <div id="quest-overlay">
+        <button class="back-btn" id="back-btn" data-i18n="back">← BACK</button>
+        <div class="quest-title" id="quest-title" data-i18n="incomingTransmission">INCOMING TRANSMISSION</div>
+        <div class="quest-content" id="quest-content">
+            <div class="quest-message" id="quest-message"></div>
+            <div id="quest-stage-1" style="display: none;">
+                <div class="matrix-grid" id="matrix-grid"></div>
+                <input type="text" class="quest-input" id="quest-input-1" placeholder="ENTER CODE" maxlength="5">
+                <br>
+                <button class="quest-btn" id="quest-btn-1" data-i18n="verify">VERIFY</button>
+            </div>
+            <div id="quest-stage-2" style="display: none;">
+                <p style="color: var(--color-text-sec); margin-bottom: 1rem;" data-i18n="findFrequency">Find the frequency that matches the core signal.</p>
+                <div class="frequency-buttons">
+                    <button class="freq-btn" data-freq="128">128 Hz</button>
+                    <button class="freq-btn" data-freq="256">256 Hz</button>
+                    <button class="freq-btn" data-freq="512">512 Hz</button>
+                </div>
+            </div>
+            <div id="quest-stage-3" style="display: none;">
+                <p style="color: var(--color-text-main); margin-bottom: 2rem; font-size: 1.1rem;" data-i18n="systemWaiting">THE SYSTEM IS WAITING FOR YOUR DECISION.</p>
+                <input type="text" class="quest-input" id="quest-input-3" placeholder="ENTER PROTOCOL" maxlength="6">
+                <br>
+                <button class="quest-btn" id="quest-btn-3" data-i18n="execute">EXECUTE</button>
+            </div>
+            <button class="quest-btn" id="begin-investigation" style="margin-top: 2rem;" data-i18n="beginInvestigation">BEGIN INVESTIGATION</button>
+        </div>
+    </div>
+
+    <div id="secret-screen">
+        <div class="secret-title" data-i18n="foundTruth">YOU FOUND THE TRUTH.</div>
+        <div class="secret-text" data-i18n="nexusNotSystem">NEXUS IS NOT A SYSTEM.</div>
+        <div class="secret-text" data-i18n="nexusIsAwakening">IT IS AN AWAKENING.</div>
+        <div class="secret-text" style="color: var(--color-text-sec); margin-top: 2rem;" data-i18n="realityRedefined">Reality has been successfully redefined.</div>
+        
+        <div class="secret-stats">
+            <div class="stat-row">
+                <span class="stat-label" data-i18n="decryption">Decryption:</span>
+                <span class="stat-value" data-i18n="completed">COMPLETED</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label" data-i18n="fragments">Fragments collected:</span>
+                <span class="stat-value">3/3</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label" data-i18n="protocolStatus">Protocol status:</span>
+                <span class="stat-value" data-i18n="unlocked">UNLOCKED</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label" data-i18n="totalScore">Total score:</span>
+                <span class="stat-value" id="final-score">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label" data-i18n="investigationStatus">Investigation status:</span>
+                <span class="stat-value" data-i18n="complete">COMPLETE</span>
+            </div>
+        </div>
+
+        <button class="restart-btn" id="restart-btn" data-i18n="restartSimulation">RESTART SIMULATION</button>
+    </div>
+
+    <canvas id="matrix-canvas"></canvas>
+    <div id="notifications"></div>
+
+    <script>
+        const translations = {
+            en: {
+                bootTitle: 'NEXUS OS // INITIALIZING...',
+                skipBoot: 'SKIP INITIALIZATION',
+                systemOnline: 'SYSTEM: ONLINE',
+                securityLevel: 'SECURITY: LEVEL 04',
+                encryptionActive: 'ENCRYPTION: ACTIVE',
+                score: 'SCORE',
+                welcomeTitle: 'WELCOME TO THE UNKNOWN',
+                subtitle1: 'YOU HAVE ENTERED A RESTRICTED DIGITAL ENVIRONMENT.',
+                subtitle2: 'Your reality is only a layer of the system.',
+                networkStatus: 'NETWORK STATUS',
+                connection: 'Connection',
+                secure: 'SECURE',
+                nodesDetected: 'Nodes detected',
+                activeChannels: 'Active channels',
+                threatLevel: 'Threat level',
+                low: 'LOW',
+                neuralCore: 'NEURAL CORE',
+                coreStability: 'CORE STABILITY',
+                systemAlert: 'SYSTEM ALERT',
+                unknownSignal: 'UNKNOWN SIGNAL DETECTED',
+                signalIntercepted: 'An unidentified transmission has been intercepted.',
+                investigateSignal: 'INVESTIGATE SIGNAL',
+                terminalHeader: 'ROOT ACCESS TERMINAL',
+                incomingTransmission: 'INCOMING TRANSMISSION',
+                verify: 'VERIFY',
+                findFrequency: 'Find the frequency that matches the core signal.',
+                systemWaiting: 'THE SYSTEM IS WAITING FOR YOUR DECISION.',
+                execute: 'EXECUTE',
+                beginInvestigation: 'BEGIN INVESTIGATION',
+                foundTruth: 'YOU FOUND THE TRUTH.',
+                nexusNotSystem: 'NEXUS IS NOT A SYSTEM.',
+                nexusIsAwakening: 'IT IS AN AWAKENING.',
+                realityRedefined: 'Reality has been successfully redefined.',
+                decryption: 'Decryption:',
+                completed: 'COMPLETED',
+                fragments: 'Fragments collected:',
+                protocolStatus: 'Protocol status:',
+                unlocked: 'UNLOCKED',
+                totalScore: 'Total score:',
+                investigationStatus: 'Investigation status:',
+                complete: 'COMPLETE',
+                restartSimulation: 'RESTART SIMULATION',
+                audioOn: 'AUDIO: ON',
+                audioOff: 'AUDIO: OFF',
+                back: '← BACK',
+                terminalWelcome: 'NEXUS OS Terminal v2.4.1',
+                typeHelp: "Type 'help' for available commands.",
+                availableCommands: 'Available commands',
+                systemStatus: 'SYSTEM STATUS: OPERATIONAL',
+                initializingScan: 'Initializing scan sequence...',
+                scanningSector: 'Scanning sector 4A...',
+                scanComplete: 'Scan complete. No immediate threats detected.',
+                connectingNode: 'CONNECTING TO REMOTE NODE...',
+                handshakeInitiated: 'HANDSHAKE INITIATED...',
+                encryptionEstablished: 'ENCRYPTION ESTABLISHED.',
+                connectionSuccessful: 'CONNECTION SUCCESSFUL.',
+                encryptedMessage: 'Encrypted message: Uifsf jt b tfdsfu jo uif tztufn.',
+                hintCaesar: 'Hint: Caesar cipher, shift -1',
+                enterDecryption: 'Enter your decryption below (type answer and press enter):',
+                decryptionCompleted: 'Decryption already completed. Protocol accessible.',
+                accessGranted: 'ACCESS GRANTED. PROTOCOL UNLOCKED.',
+                accessDenied: 'ACCESS DENIED. COMPLETE THE DECRYPTION CHALLENGE FIRST.',
+                decryptionSuccessful: 'DECRYPTION SUCCESSFUL.',
+                accessGrantedProtocols: 'Access granted to hidden protocols.',
+                decryptionFailed: 'DECRYPTION FAILED. INVALID KEY.',
+                hintShift: 'Hint: Shift each letter back by 1. U->T, i->h, f->e...',
+                commandNotFound: 'Command not found',
+                aboutNexus: 'NEXUS BLACK PROTOCOL',
+                aboutDesc1: 'A classified digital environment designed to test',
+                aboutDesc2: 'human interaction with emergent AI systems.',
+                projectStatus: 'Project status: ACTIVE',
+                watchingYou: 'We have been watching you.',
+                systemNotSeems: 'The system is not what it seems.',
+                findFragments: 'Find the three fragments. Unlock the truth.',
+                digitalFootprint: 'STAGE 1: DIGITAL FOOTPRINT',
+                findHiddenCode: 'Find the hidden code in the data matrix.',
+                fragment1Acquired: 'FRAGMENT 1 ACQUIRED',
+                invalidCode: 'INVALID CODE',
+                signalFrequency: 'STAGE 2: SIGNAL FREQUENCY',
+                findFrequencyMatch: 'Find the frequency that matches the core signal.',
+                fragment2Acquired: 'FRAGMENT 2 ACQUIRED',
+                frequencyMismatch: 'FREQUENCY MISMATCH',
+                finalProtocol: 'STAGE 3: FINAL PROTOCOL',
+                systemWaitingDecision: 'THE SYSTEM IS WAITING FOR YOUR DECISION.',
+                protocolUnlocked: 'PROTOCOL UNLOCKED',
+                accessDeniedText: 'ACCESS DENIED',
+                systemMessageReceived: 'SYSTEM MESSAGE RECEIVED',
+                neuralCoreReactivated: 'NEURAL CORE REACTIVATED',
+                decryptionComplete: 'DECRYPTION COMPLETE'
+            },
+            ru: {
+                bootTitle: 'NEXUS OS // ИНИЦИАЛИЗАЦИЯ...',
+                skipBoot: 'ПРОПУСТИТЬ ИНИЦИАЛИЗАЦИЮ',
+                systemOnline: 'СИСТЕМА: ОНЛАЙН',
+                securityLevel: 'БЕЗОПАСНОСТЬ: УРОВЕНЬ 04',
+                encryptionActive: 'ШИФРОВАНИЕ: АКТИВНО',
+                score: 'СЧЁТ',
+                welcomeTitle: 'ДОБРО ПОЖАЛОВАТЬ В НЕИЗВЕСТНОСТЬ',
+                subtitle1: 'ВЫ ВОШЛИ В ЗАЩИЩЁННУЮ ЦИФРОВУЮ СРЕДУ.',
+                subtitle2: 'Ваша реальность — лишь слой системы.',
+                networkStatus: 'СТАТУС СЕТИ',
+                connection: 'Соединение',
+                secure: 'БЕЗОПАСНО',
+                nodesDetected: 'Обнаружено узлов',
+                activeChannels: 'Активных каналов',
+                threatLevel: 'Уровень угрозы',
+                low: 'НИЗКИЙ',
+                neuralCore: 'НЕЙРОЯДРО',
+                coreStability: 'СТАБИЛЬНОСТЬ ЯДРА',
+                systemAlert: 'СИСТЕМНОЕ ПРЕДУПРЕЖДЕНИЕ',
+                unknownSignal: 'ОБНАРУЖЕН НЕИЗВЕСТНЫЙ СИГНАЛ',
+                signalIntercepted: 'Перехвачена неизвестная передача.',
+                investigateSignal: 'ИССЛЕДОВАТЬ СИГНАЛ',
+                terminalHeader: 'ТЕРМИНАЛ ROOT-ДОСТУПА',
+                incomingTransmission: 'ВХОДЯЩЕЕ СООБЩЕНИЕ',
+                verify: 'ПОДТВЕРДИТЬ',
+                findFrequency: 'Найдите частоту, соответствующую сигналу ядра.',
+                systemWaiting: 'СИСТЕМА ЖДЁТ ВАШЕГО РЕШЕНИЯ.',
+                execute: 'ВЫПОЛНИТЬ',
+                beginInvestigation: 'НАЧАТЬ РАССЛЕДОВАНИЕ',
+                foundTruth: 'ВЫ НАШЛИ ИСТИНУ.',
+                nexusNotSystem: 'NEXUS — ЭТО НЕ СИСТЕМА.',
+                nexusIsAwakening: 'ЭТО ПРОБУЖДЕНИЕ.',
+                realityRedefined: 'Реальность успешно переопределена.',
+                decryption: 'Дешифровка:',
+                completed: 'ВЫПОЛНЕНО',
+                fragments: 'Собрано фрагментов:',
+                protocolStatus: 'Статус протокола:',
+                unlocked: 'РАЗБЛОКИРОВАН',
+                totalScore: 'Общий счёт:',
+                investigationStatus: 'Статус расследования:',
+                complete: 'ЗАВЕРШЕНО',
+                restartSimulation: 'ПЕРЕЗАПУСТИТЬ СИМУЛЯЦИЮ',
+                audioOn: 'ЗВУК: ВКЛ',
+                audioOff: 'ЗВУК: ВЫКЛ',
+                back: '← НАЗАД',
+                terminalWelcome: 'Терминал NEXUS OS v2.4.1',
+                typeHelp: "Введите 'help' для списка команд.",
+                availableCommands: 'Доступные команды',
+                systemStatus: 'СТАТУС СИСТЕМЫ: РАБОТАЕТ',
+                initializingScan: 'Инициализация сканирования...',
+                scanningSector: 'Сканирование сектора 4A...',
+                scanComplete: 'Сканирование завершено. Угроз не обнаружено.',
+                connectingNode: 'ПОДКЛЮЧЕНИЕ К УДАЛЁННОМУ УЗЛУ...',
+                handshakeInitiated: 'РУКОПОЖАТИЕ ИНИЦИИРОВАНО...',
+                encryptionEstablished: 'ШИФРОВАНИЕ УСТАНОВЛЕНО.',
+                connectionSuccessful: 'ПОДКЛЮЧЕНИЕ УСПЕШНО.',
+                encryptedMessage: 'Зашифрованное сообщение: Uifsf jt b tfdsfu jo uif tztufn.',
+                hintCaesar: 'Подсказка: Шифр Цезаря, сдвиг -1',
+                enterDecryption: 'Введите расшифровку ниже (нажмите Enter):',
+                decryptionCompleted: 'Дешифровка уже выполнена. Протокол доступен.',
+                accessGranted: 'ДОСТУП РАЗРЕШЁН. ПРОТОКОЛ РАЗБЛОКИРОВАН.',
+                accessDenied: 'ДОСТУП ЗАПРЕЩЁН. СНАЧАЛА ЗАВЕРШИТЕ ДЕШИФРОВКУ.',
+                decryptionSuccessful: 'ДЕШИФРОВКА УСПЕШНА.',
+                accessGrantedProtocols: 'Доступ к скрытым протоколам разрешён.',
+                decryptionFailed: 'ДЕШИФРОВКА НЕ УДАЛАСЬ. НЕВЕРНЫЙ КЛЮЧ.',
+                hintShift: 'Подсказка: Сдвиньте каждую букву назад на 1. U->T, i->h, f->e...',
+                commandNotFound: 'Команда не найдена',
+                aboutNexus: 'NEXUS BLACK PROTOCOL',
+                aboutDesc1: 'Секретная цифровая среда для тестирования',
+                aboutDesc2: 'взаимодействия человека с ИИ системами.',
+                projectStatus: 'Статус проекта: АКТИВЕН',
+                watchingYou: 'Мы наблюдаем за вами.',
+                systemNotSeems: 'Система не то, чем кажется.',
+                findFragments: 'Найдите три фрагмента. Откройте истину.',
+                digitalFootprint: 'ЭТАП 1: ЦИФРОВОЙ СЛЕД',
+                findHiddenCode: 'Найдите скрытый код в матрице данных.',
+                fragment1Acquired: 'ФРАГМЕНТ 1 ПОЛУЧЕН',
+                invalidCode: 'НЕВЕРНЫЙ КОД',
+                signalFrequency: 'ЭТАП 2: ЧАСТОТА СИГНАЛА',
+                findFrequencyMatch: 'Найдите частоту, соответствующую сигналу ядра.',
+                fragment2Acquired: 'ФРАГМЕНТ 2 ПОЛУЧЕН',
+                frequencyMismatch: 'НЕСООТВЕТСТВИЕ ЧАСТОТЫ',
+                finalProtocol: 'ЭТАП 3: ФИНАЛЬНЫЙ ПРОТОКОЛ',
+                systemWaitingDecision: 'СИСТЕМА ЖДЁТ ВАШЕГО РЕШЕНИЯ.',
+                protocolUnlocked: 'ПРОТОКОЛ РАЗБЛОКИРОВАН',
+                accessDeniedText: 'ДОСТУП ЗАПРЕЩЁН',
+                systemMessageReceived: 'ПОЛУЧЕНО СИСТЕМНОЕ СООБЩЕНИЕ',
+                neuralCoreReactivated: 'НЕЙРОЯДРО РЕАКТИВИРОВАНО',
+                decryptionComplete: 'ДЕШИФРОВКА ЗАВЕРШЕНА'
+            }
+        };
+
+        let currentLang = 'en';
+
+        const gameState = {
+            score: 0,
+            currentScreen: 'boot',
+            fragmentsCollected: 0,
+            decryptionSolved: false,
+            protocolUnlocked: false,
+            soundEnabled: false,
+            matrixActive: false,
+            questStage: 0,
+            decryptAttempts: 0
+        };
+
+        const AudioManager = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playTone(freq, type, duration, vol = 0.1) {
+                if (!gameState.soundEnabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            },
+            playClick() { this.playTone(800, 'square', 0.05, 0.05); },
+            playSuccess() { 
+                this.playTone(600, 'sine', 0.1, 0.1);
+                setTimeout(() => this.playTone(800, 'sine', 0.2, 0.1), 100);
+            },
+            playError() { this.playTone(150, 'sawtooth', 0.3, 0.1); },
+            playType() { this.playTone(1200, 'square', 0.03, 0.02); }
+        };
+
+        const UIManager = {
+            cursor: {
+                dot: document.querySelector('.cursor-dot'),
+                ring: document.querySelector('.cursor-ring'),
+                x: 0, y: 0,
+                ringX: 0, ringY: 0,
+                init() {
+                    if (window.matchMedia('(hover: none)').matches) return;
+                    document.addEventListener('mousemove', (e) => {
+                        this.x = e.clientX;
+                        this.y = e.clientY;
+                        this.dot.style.left = this.x + 'px';
+                        this.dot.style.top = this.y + 'px';
+                    });
+                    this.animate();
+                    
+                    document.querySelectorAll('button, input, .panel, .freq-btn').forEach(el => {
+                        el.addEventListener('mouseenter', () => document.getElementById('custom-cursor').classList.add('cursor-hover'));
+                        el.addEventListener('mouseleave', () => document.getElementById('custom-cursor').classList.remove('cursor-hover'));
+                    });
+                },
+                animate() {
+                    this.ringX += (this.x - this.ringX) * 0.15;
+                    this.ringY += (this.y - this.ringY) * 0.15;
+                    this.ring.style.left = this.ringX + 'px';
+                    this.ring.style.top = this.ringY + 'px';
+                    requestAnimationFrame(() => this.animate());
+                }
+            },
+            notify(message, type = 'info') {
+                const container = document.getElementById('notifications');
+                const notif = document.createElement('div');
+                notif.className = `notification ${type}`;
+                notif.textContent = message;
+                container.appendChild(notif);
+                setTimeout(() => {
+                    notif.style.opacity = '0';
+                    notif.style.transform = 'translateX(100%)';
+                    setTimeout(() => notif.remove(), 300);
+                }, 3000);
+            },
+            updateScore(points) {
+                gameState.score += points;
+                document.getElementById('score-display').textContent = gameState.score;
+                this.notify(`+${points} ${currentLang === 'ru' ? 'ОЧКОВ' : 'POINTS'}`, 'success');
+                AudioManager.playSuccess();
+            },
+            updateClock() {
+                const now = new Date();
+                document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', { hour12: false });
+            },
+            translatePage() {
+                document.querySelectorAll('[data-i18n]').forEach(element => {
+                    const key = element.getAttribute('data-i18n');
+                    if (translations[currentLang][key]) {
+                        element.textContent = translations[currentLang][key];
+                    }
+                });
+                
+                const glitchEl = document.querySelector('.glitch');
+                if (glitchEl) {
+                    glitchEl.setAttribute('data-text', translations[currentLang].welcomeTitle);
+                }
+                
+                const audioBtn = document.getElementById('audio-toggle');
+                audioBtn.textContent = gameState.soundEnabled ? 
+                    translations[currentLang].audioOn : 
+                    translations[currentLang].audioOff;
+            }
+        };
+
+        document.getElementById('lang-switcher').addEventListener('click', function() {
+            currentLang = currentLang === 'en' ? 'ru' : 'en';
+            this.textContent = currentLang === 'en' ? 'RU' : 'EN';
+            UIManager.translatePage();
+            AudioManager.playClick();
+        });
+
+        const BootSequence = {
+            messages: [
+                "Establishing secure connection...",
+                "Bypassing virtual firewall...",
+                "Loading neural interface...",
+                "Synchronizing encrypted channels...",
+                "Detecting unknown signal...",
+                "SYSTEM READY."
+            ],
+            async start() {
+                const log = document.getElementById('boot-log');
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                
+                for (let i = 0; i < this.messages.length; i++) {
+                    await this.delay(400 + Math.random() * 400);
+                    const line = document.createElement('div');
+                    line.className = 'boot-log-line';
+                    if (i === this.messages.length - 1) line.classList.add('success');
+                    line.textContent = `> ${this.messages[i]}`;
+                    log.appendChild(line);
+                    log.scrollTop = log.scrollHeight;
+                    
+                    const progress = Math.round(((i + 1) / this.messages.length) * 100);
+                    progressBar.style.width = progress + '%';
+                    progressText.textContent = progress + '%';
+                    AudioManager.playType();
+                }
+                
+                await this.delay(500);
+                this.complete();
+            },
+            delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); },
+            complete() {
+                document.getElementById('boot-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('boot-screen').style.display = 'none';
+                    document.getElementById('main-interface').style.display = 'block';
+                    setTimeout(() => {
+                        document.getElementById('main-interface').style.opacity = '1';
+                        gameState.currentScreen = 'main';
+                        Terminal.init();
+                        NeuralCore.init();
+                        UIManager.notify(translations[currentLang].systemMessageReceived, 'info');
+                    }, 100);
+                }, 500);
+            },
+            skip() {
+                document.getElementById('boot-screen').style.display = 'none';
+                document.getElementById('main-interface').style.display = 'block';
+                document.getElementById('main-interface').style.opacity = '1';
+                gameState.currentScreen = 'main';
+                Terminal.init();
+                NeuralCore.init();
+            }
+        };
+
+        const Terminal = {
+            history: [],
+            historyIndex: -1,
+            awaitingDecrypt: false,
+            init() {
+                const input = document.getElementById('terminal-input');
+                const output = document.getElementById('terminal-output');
+                
+                this.print(translations[currentLang].terminalWelcome, "info");
+                this.print(translations[currentLang].typeHelp, "info");
+                this.print("------------------------------------------------", "info");
+                
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        const cmd = input.value.trim().toLowerCase();
+                        if (cmd) {
+                            this.history.push(cmd);
+                            this.historyIndex = this.history.length;
+                            this.execute(cmd);
+                        }
+                        input.value = '';
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (this.historyIndex > 0) {
+                            this.historyIndex--;
+                            input.value = this.history[this.historyIndex];
+                        }
+                    } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (this.historyIndex < this.history.length - 1) {
+                            this.historyIndex++;
+                            input.value = this.history[this.historyIndex];
+                        } else {
+                            this.historyIndex = this.history.length;
+                            input.value = '';
+                        }
+                    }
+                });
+                
+                document.querySelector('.terminal-container').addEventListener('click', () => {
+                    if (gameState.currentScreen === 'main') input.focus();
+                });
+            },
+            print(text, type = '') {
+                const output = document.getElementById('terminal-output');
+                const line = document.createElement('div');
+                line.className = `terminal-line ${type}`;
+                line.textContent = text;
+                output.appendChild(line);
+                output.scrollTop = output.scrollHeight;
+            },
+            async execute(cmd) {
+                this.print(`root@nexus:~$ ${cmd}`, 'prompt');
+                AudioManager.playClick();
+                
+                const t = translations[currentLang];
+                
+                switch(cmd) {
+                    case 'help':
+                        this.print(t.availableCommands + ":", "info");
+                        this.print("  help     - " + (currentLang === 'ru' ? "показать команды" : "show available commands"));
+                        this.print("  status   - " + (currentLang === 'ru' ? "статус системы" : "display system status"));
+                        this.print("  scan     - " + (currentLang === 'ru' ? "сканировать среду" : "scan digital environment"));
+                        this.print("  connect  - " + (currentLang === 'ru' ? "подключиться" : "establish secure connection"));
+                        this.print("  decrypt  - " + (currentLang === 'ru' ? "дешифровать" : "decode encrypted transmission"));
+                        this.print("  matrix   - " + (currentLang === 'ru' ? "матрица" : "activate matrix visualization"));
+                        this.print("  clear    - " + (currentLang === 'ru' ? "очистить" : "clear terminal"));
+                        this.print("  about    - " + (currentLang === 'ru' ? "о системе" : "information about NEXUS"));
+                        this.print("  secret   - " + (currentLang === 'ru' ? "секретный протокол" : "access hidden protocol"));
+                        break;
+                    case 'status':
+                        this.print(t.systemStatus, "success");
+                        this.print(`Uptime: ${Math.floor(Math.random() * 999)} days`);
+                        this.print(`Memory: ${Math.floor(Math.random() * 30 + 60)}% utilized`);
+                        this.print(`Active processes: ${Math.floor(Math.random() * 50 + 100)}`);
+                        break;
+                    case 'scan':
+                        this.print(t.initializingScan, "info");
+                        await this.delay(500);
+                        this.print(t.scanningSector, "info");
+                        await this.delay(600);
+                        this.print(`Found node at ${Math.floor(Math.random()*999)}:${Math.floor(Math.random()*999)}`, "info");
+                        await this.delay(600);
+                        this.print(t.scanComplete, "success");
+                        break;
+                    case 'connect':
+                        this.print(t.connectingNode, "info");
+                        await this.delay(400);
+                        this.print(t.handshakeInitiated, "info");
+                        await this.delay(400);
+                        this.print(t.encryptionEstablished, "success");
+                        await this.delay(400);
+                        this.print(t.connectionSuccessful, "success");
+                        break;
+                    case 'decrypt':
+                        if (gameState.decryptionSolved) {
+                            this.print(t.decryptionCompleted, "success");
+                        } else {
+                            this.print(t.encryptedMessage, "info");
+                            this.print(t.hintCaesar, "info");
+                            this.print(t.enterDecryption, "info");
+                            this.awaitingDecrypt = true;
+                        }
+                        break;
+                    case 'matrix':
+                        Matrix.toggle();
+                        break;
+                    case 'clear':
+                        document.getElementById('terminal-output').innerHTML = '';
+                        break;
+                    case 'about':
+                        this.print(t.aboutNexus, "info");
+                        this.print(t.aboutDesc1, "info");
+                        this.print(t.aboutDesc2, "info");
+                        this.print(t.projectStatus, "info");
+                        break;
+                    case 'secret':
+                        if (gameState.decryptionSolved) {
+                            this.print(t.accessGranted, "success");
+                            setTimeout(() => QuestManager.start(), 500);
+                        } else {
+                            this.print(t.accessDenied, "error");
+                            AudioManager.playError();
+                        }
+                        break;
+                    default:
+                        if (this.awaitingDecrypt) {
+                            if (cmd === "there is a secret in the system.") {
+                                this.print(t.decryptionSuccessful, "success");
+                                this.print(t.accessGrantedProtocols, "success");
+                                gameState.decryptionSolved = true;
+                                this.awaitingDecrypt = false;
+                                UIManager.updateScore(100);
+                                UIManager.notify(t.decryptionComplete, 'success');
+                            } else {
+                                gameState.decryptAttempts++;
+                                this.print(t.decryptionFailed, "error");
+                                AudioManager.playError();
+                                if (gameState.decryptAttempts >= 3) {
+                                    this.print(t.hintShift, "info");
+                                }
+                            }
+                        } else {
+                            this.print(`${t.commandNotFound}: ${cmd}`, "error");
+                        }
+                }
+            },
+            delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+        };
+
+        const NeuralCore = {
+            canvas: null,
+            ctx: null,
+            animationId: null,
+            angle: 0,
+            pulse: 1,
+            init() {
+                this.canvas = document.getElementById('neural-core-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                
+                this.canvas.addEventListener('click', () => {
+                    AudioManager.playSuccess();
+                    UIManager.notify(translations[currentLang].neuralCoreReactivated, 'success');
+                    this.pulse = 1.5;
+                });
+                
+                this.animate();
+            },
+            resize() {
+                this.canvas.width = this.canvas.offsetWidth;
+                this.canvas.height = this.canvas.offsetHeight;
+            },
+            animate() {
+                if (gameState.currentScreen !== 'main' && gameState.currentScreen !== 'boot') return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                const cx = this.canvas.width / 2;
+                const cy = this.canvas.height / 2;
+                this.pulse = this.pulse ? this.pulse * 0.95 : 1;
+                
+                this.ctx.strokeStyle = '#00E5FF';
+                this.ctx.lineWidth = 1;
+                
+                for (let i = 0; i < 3; i++) {
+                    this.ctx.beginPath();
+                    const radius = (20 + i * 15) * this.pulse;
+                    const rotation = this.angle * (i % 2 === 0 ? 1 : -1) * (0.02 + i * 0.01);
+                    
+                    for (let a = 0; a < Math.PI * 2; a += 0.1) {
+                        const r = radius + Math.sin(a * 5 + this.angle) * 3;
+                        const x = cx + Math.cos(a + rotation) * r;
+                        const y = cy + Math.sin(a + rotation) * r;
+                        if (a === 0) this.ctx.moveTo(x, y);
+                        else this.ctx.lineTo(x, y);
+                    }
+                    this.ctx.closePath();
+                    this.ctx.stroke();
+                }
+                
+                this.ctx.fillStyle = '#B6FF00';
+                this.ctx.beginPath();
+                this.ctx.arc(cx, cy, 3 * this.pulse, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                this.angle += 0.02;
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+        };
+
+        const Matrix = {
+            canvas: null,
+            ctx: null,
+            animationId: null,
+            drops: [],
+            chars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*',
+            toggle() {
+                this.canvas = document.getElementById('matrix-canvas');
+                if (gameState.matrixActive) {
+                    gameState.matrixActive = false;
+                    this.canvas.classList.remove('active');
+                    cancelAnimationFrame(this.animationId);
+                } else {
+                    gameState.matrixActive = true;
+                    this.canvas.classList.add('active');
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight;
+                    this.ctx = this.canvas.getContext('2d');
+                    this.drops = Array(Math.floor(this.canvas.width / 20)).fill(1);
+                    this.animate();
+                }
+            },
+            animate() {
+                if (!gameState.matrixActive) return;
+                this.ctx.fillStyle = 'rgba(5, 7, 9, 0.05)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.ctx.fillStyle = '#B6FF00';
+                this.ctx.font = '15px JetBrains Mono';
+                
+                for (let i = 0; i < this.drops.length; i++) {
+                    const text = this.chars[Math.floor(Math.random() * this.chars.length)];
+                    this.ctx.fillText(text, i * 20, this.drops[i] * 20);
+                    
+                    if (this.drops[i] * 20 > this.canvas.height && Math.random() > 0.975) {
+                        this.drops[i] = 0;
+                    }
+                    this.drops[i]++;
+                }
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+        };
+
+        const QuestManager = {
+            init() {
+                document.getElementById('investigate-btn').addEventListener('click', () => this.start());
+                document.getElementById('begin-investigation').addEventListener('click', () => this.startStage1());
+                document.getElementById('quest-btn-1').addEventListener('click', () => this.checkStage1());
+                document.querySelectorAll('.freq-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.checkStage2(e.target));
+                });
+                document.getElementById('quest-btn-3').addEventListener('click', () => this.checkStage3());
+                document.getElementById('quest-input-1').addEventListener('keypress', (e) => { if(e.key==='Enter') this.checkStage1(); });
+                document.getElementById('quest-input-3').addEventListener('keypress', (e) => { if(e.key==='Enter') this.checkStage3(); });
+                
+                document.getElementById('back-btn').addEventListener('click', () => this.goBack());
+            },
+            start() {
+                gameState.questStage = 0;
+                const overlay = document.getElementById('quest-overlay');
+                overlay.classList.add('active');
+                gameState.currentScreen = 'quest';
+                
+                document.getElementById('back-btn').classList.add('visible');
+                
+                document.getElementById('quest-stage-1').style.display = 'none';
+                document.getElementById('quest-stage-2').style.display = 'none';
+                document.getElementById('quest-stage-3').style.display = 'none';
+                document.getElementById('begin-investigation').style.display = 'inline-block';
+                
+                document.getElementById('quest-title').textContent = translations[currentLang].incomingTransmission;
+                document.getElementById('quest-message').innerHTML = '';
+                
+                const t = translations[currentLang];
+                const lines = [
+                    t.watchingYou,
+                    t.systemNotSeems,
+                    t.findFragments
+                ];
+                
+                let lineIndex = 0;
+                const typeLine = () => {
+                    if (lineIndex < lines.length) {
+                        const p = document.createElement('div');
+                        p.style.marginBottom = '1rem';
+                        document.getElementById('quest-message').appendChild(p);
+                        this.typeText(p, lines[lineIndex], 0, () => {
+                            lineIndex++;
+                            setTimeout(typeLine, 500);
+                        });
+                    }
+                };
+                typeLine();
+            },
+            goBack() {
+                document.getElementById('quest-overlay').classList.remove('active');
+                document.getElementById('back-btn').classList.remove('visible');
+                gameState.currentScreen = 'main';
+            },
+            typeText(element, text, index, callback) {
+                if (index < text.length) {
+                    element.textContent += text.charAt(index);
+                    AudioManager.playType();
+                    setTimeout(() => this.typeText(element, text, index + 1, callback), 50);
+                } else {
+                    if (callback) callback();
+                }
+            },
+            startStage1() {
+                gameState.questStage = 1;
+                document.getElementById('begin-investigation').style.display = 'none';
+                document.getElementById('quest-stage-1').style.display = 'block';
+                document.getElementById('quest-title').textContent = translations[currentLang].digitalFootprint;
+                document.getElementById('quest-message').textContent = translations[currentLang].findHiddenCode;
+                
+                const grid = document.getElementById('matrix-grid');
+                grid.innerHTML = '';
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                const target = 'N3XU5';
+                const gridChars = Array(100).fill(null).map(() => chars[Math.floor(Math.random() * chars.length)]);
+                const startIdx = Math.floor(Math.random() * (100 - 5));
+                for(let i = 0; i < 5; i++) gridChars[startIdx + i] = target[i];
+                
+                gridChars.forEach(char => {
+                    const span = document.createElement('span');
+                    span.textContent = char;
+                    grid.appendChild(span);
+                });
+            },
+            checkStage1() {
+                const input = document.getElementById('quest-input-1').value.toUpperCase();
+                const t = translations[currentLang];
+                if (input === 'N3XU5') {
+                    AudioManager.playSuccess();
+                    UIManager.notify(t.fragment1Acquired, 'success');
+                    UIManager.updateScore(100);
+                    gameState.fragmentsCollected++;
+                    setTimeout(() => this.startStage2(), 1000);
+                } else {
+                    AudioManager.playError();
+                    UIManager.notify(t.invalidCode, 'error');
+                    const inputEl = document.getElementById('quest-input-1');
+                    inputEl.style.borderColor = 'var(--color-red)';
+                    setTimeout(() => { inputEl.style.borderColor = 'var(--color-neon)'; }, 500);
+                }
+            },
+            startStage2() {
+                gameState.questStage = 2;
+                document.getElementById('quest-stage-1').style.display = 'none';
+                document.getElementById('quest-stage-2').style.display = 'block';
+                document.getElementById('quest-title').textContent = translations[currentLang].signalFrequency;
+                document.getElementById('quest-message').textContent = translations[currentLang].findFrequencyMatch;
+            },
+            checkStage2(btn) {
+                const freq = btn.getAttribute('data-freq');
+                const t = translations[currentLang];
+                if (freq === '256') {
+                    btn.classList.add('selected');
+                    AudioManager.playSuccess();
+                    UIManager.notify(t.fragment2Acquired, 'success');
+                    UIManager.updateScore(100);
+                    gameState.fragmentsCollected++;
+                    setTimeout(() => this.startStage3(), 1000);
+                } else {
+                    btn.classList.add('error');
+                    AudioManager.playError();
+                    UIManager.notify(t.frequencyMismatch, 'error');
+                    setTimeout(() => btn.classList.remove('error'), 500);
+                }
+            },
+            startStage3() {
+                gameState.questStage = 3;
+                document.getElementById('quest-stage-2').style.display = 'none';
+                document.getElementById('quest-stage-3').style.display = 'block';
+                document.getElementById('quest-title').textContent = translations[currentLang].finalProtocol;
+                document.getElementById('quest-message').textContent = translations[currentLang].systemWaitingDecision;
+            },
+            checkStage3() {
+                const input = document.getElementById('quest-input-3').value.toUpperCase();
+                const t = translations[currentLang];
+                if (input === 'AWAKEN') {
+                    AudioManager.playSuccess();
+                    UIManager.notify(t.protocolUnlocked, 'success');
+                    UIManager.updateScore(200);
+                    gameState.fragmentsCollected++;
+                    
+                    document.body.style.animation = 'shake 0.5s';
+                    document.getElementById('quest-overlay').style.background = 'rgba(182, 255, 0, 0.2)';
+                    setTimeout(() => {
+                        document.body.style.animation = '';
+                        document.getElementById('quest-overlay').style.background = 'rgba(5, 7, 9, 0.98)';
+                        this.showSecretScreen();
+                    }, 1500);
+                } else {
+                    AudioManager.playError();
+                    UIManager.notify(t.accessDeniedText, 'error');
+                }
+            },
+            showSecretScreen() {
+                document.getElementById('quest-overlay').classList.remove('active');
+                document.getElementById('back-btn').classList.remove('visible');
+                document.getElementById('main-interface').style.display = 'none';
+                document.getElementById('secret-screen').classList.add('active');
+                
+                gameState.score += 500;
+                document.getElementById('score-display').textContent = gameState.score;
+                document.getElementById('final-score').textContent = gameState.score;
+                UIManager.notify('+500 ' + (currentLang === 'ru' ? 'ОЧКОВ (СЕКРЕТНЫЙ ПРОТОКОЛ)' : 'POINTS (SECRET PROTOCOL)'), 'success');
+                
+                gameState.currentScreen = 'secret';
+                gameState.protocolUnlocked = true;
+            }
+        };
+
+        setInterval(() => {
+            if (gameState.currentScreen === 'main') {
+                const nodes = 1280 + Math.floor(Math.random() * 10);
+                const channels = 35 + Math.floor(Math.random() * 5);
+                document.getElementById('nodes-count').textContent = nodes.toLocaleString();
+                document.getElementById('channels-count').textContent = channels;
+                
+                const stability = (98 + Math.random() * 1.9).toFixed(1);
+                document.getElementById('core-stability').textContent = stability + '%';
+            }
+        }, 3000);
+
+        setInterval(UIManager.updateClock, 1000);
+        UIManager.updateClock();
+
+        document.getElementById('skip-boot').addEventListener('click', () => {
+            AudioManager.init();
+            BootSequence.skip();
+        });
+
+        document.getElementById('audio-toggle').addEventListener('click', function() {
+            AudioManager.init();
+            gameState.soundEnabled = !gameState.soundEnabled;
+            const t = translations[currentLang];
+            this.textContent = gameState.soundEnabled ? t.audioOn : t.audioOff;
+            this.style.color = gameState.soundEnabled ? 'var(--color-acid)' : 'var(--color-text-sec)';
+            this.style.borderColor = gameState.soundEnabled ? 'var(--color-acid)' : 'var(--color-text-sec)';
+            if (gameState.soundEnabled) AudioManager.playClick();
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            gameState.score = 0;
+            gameState.fragmentsCollected = 0;
+            gameState.decryptionSolved = false;
+            gameState.protocolUnlocked = false;
+            gameState.questStage = 0;
+            gameState.decryptAttempts = 0;
+            gameState.matrixActive = false;
+            
+            document.getElementById('score-display').textContent = '0';
+            document.getElementById('secret-screen').classList.remove('active');
+            document.getElementById('main-interface').style.display = 'none';
+            document.getElementById('boot-screen').style.display = 'flex';
+            document.getElementById('boot-screen').style.opacity = '1';
+            document.getElementById('boot-log').innerHTML = '';
+            document.getElementById('progress-bar').style.width = '0%';
+            document.getElementById('progress-text').textContent = '0%';
+            
+            document.getElementById('terminal-output').innerHTML = '';
+            document.getElementById('terminal-input').value = '';
+            
+            BootSequence.start();
+        });
+
+        UIManager.cursor.init();
+        QuestManager.init();
+        
+        setTimeout(() => {
+            BootSequence.start();
+        }, 500);
+
+        document.addEventListener('mousemove', (e) => {
+            if (gameState.currentScreen !== 'main') return;
+            const x = (e.clientX / window.innerWidth - 0.5) * 20;
+            const y = (e.clientY / window.innerHeight - 0.5) * 20;
+            
+            document.querySelectorAll('.panel').forEach((panel, index) => {
+                const speed = (index + 1) * 0.5;
+                panel.style.transform = `translate(${x * speed}px, ${y * speed}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+```
